@@ -7,7 +7,7 @@ import pandas as pd
 df = pd.read_csv("postings_with_industry.csv")
 embeddings = OllamaEmbeddings(model="mxbai-embed-large")
 
-db_location = "/Users/chroma_db_c"
+db_location = "/Users/chroma_db_c" #changed to d with updated metadata variables
 add_documents = not os.path.exists(db_location)
 
 vectore_store = Chroma(
@@ -34,7 +34,9 @@ if add_documents:
         metadata = {
             "job_id": row["job_id"],
             "company_name": row["company_name"],
+            "max_salary": row["max_salary"],
             "min_salary": row["min_salary"],
+            "pay_period": row["pay_period"],
             "job_posting_url": row["job_posting_url"],
             "industry": row["industry"]
         }
@@ -55,4 +57,3 @@ if add_documents:
         vectore_store.add_documents(documents=batch_docs, ids=batch_ids)
 
 retriever = vectore_store.as_retriever(search_kwargs={"k": 5})
-
