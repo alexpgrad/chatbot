@@ -64,6 +64,16 @@ if input_text:
                 if line.startswith(prefix):
                     return line[len(prefix):].strip()
             return default
+        
+        def clean_entry(val, missing="Not listed"):
+         if val is None: 
+              return missing
+         if isinstance(val, float) and isnan(val):
+              return missing
+         s = str(val).strip()
+         if s.lower() == "nan" or s == "":
+              return missing
+         return s
 
         def format_job(doc):
             md = doc.metadata
@@ -81,10 +91,10 @@ if input_text:
                 "job_title":    title,
                 "location":     location,
                 "max_salary":   f"{sal} per {pay}".strip() or "Not available",
-                "experience":   experience,
-                "remote_allowed": remote_ok,
-                "url":          md.get("job_posting_url", "Not available"),
-                "industry":     md.get("industry", "Not specified"),
+                "experience":   clean_entry(experience, "Not specified"),
+                "remote_allowed": clean_entry(remote_ok, "Not specified"),
+                "url":          clean_entry(md.get("job_posting_url", "Not available")),
+                "industry":     clean_entry(md.get("industry", "Not specified")),
             }
 
         formatted_jobs = [format_job(d) for d in jobs]
@@ -103,8 +113,8 @@ for exchange in st.session_state.chat_history:
             st.markdown("### Matches")
             for jobs in matches: 
                 st.markdown(f"""
-**Comanpy: {jobs['company_name']}**  
-*Job Title:{jobs['job_title']}*  
+**Company: {jobs['company_name']}**  
+*Job Title: {jobs['job_title']}*  
 📍 Location: {jobs['location']}  
 💰 Salary: {jobs['max_salary']}  
 📈 Work-level Experience: {jobs['experience']}  

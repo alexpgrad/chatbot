@@ -7,7 +7,7 @@ import pandas as pd
 df = pd.read_csv("postings_with_industry.csv")
 embeddings = OllamaEmbeddings(model="mxbai-embed-large")
 
-db_location = "/Users/chroma_db_c" #changed to d with updated metadata variables
+db_location = "/Users/chroma_db_c" #working is c
 add_documents = not os.path.exists(db_location)
 
 vectore_store = Chroma(
