@@ -7,7 +7,7 @@ import pandas as pd
 df = pd.read_csv("postings_with_industry.csv")
 embeddings = OllamaEmbeddings(model="mxbai-embed-large")
 
-db_location = "/Users/chroma_db_c" #working is c
+db_location = "/Users/chroma_db_f" #working is c
 add_documents = not os.path.exists(db_location)
 
 vectore_store = Chroma(
@@ -56,4 +56,4 @@ if add_documents:
         batch_ids = ids[start:start+batch_size]
         vectore_store.add_documents(documents=batch_docs, ids=batch_ids)
 
-retriever = vectore_store.as_retriever(search_kwargs={"k": 5})
+retriever = vectore_store.as_retriever(search_kwargs={"k": 10})

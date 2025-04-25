@@ -5,9 +5,8 @@ from langchain_ollama.llms import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
 from vector import retriever
 import os
-from math import isnan
 import json
-
+from utils import format_job, format_bot_response
 
 
 def load_pdf(file):
@@ -33,7 +32,7 @@ template = """
     Here are some relevant job listings: {jobs}
 
     Strictly follow the instructions below: 
-        - DO NOT write any code, prose, or explanations.  
+        - DO NOT write any code, prose, or explanations.
         - DO NOT wrap your answer in markdown or backticks.  
         - Return exactly one JSON array (start with `[` and end with `]`).  
         - Each entry must be an object with these keys, in this order:
@@ -81,43 +80,6 @@ if uploaded_file is not None:
     resume_text = format_docs(docs)
     relevant_jobs = retriever.invoke(resume_text)
 
-    def extract_field(page_content: str, prefix: str, default="Not available") -> str:
-        for line in page_content.splitlines():
-            if line.startswith(prefix):
-                return line[len(prefix):].strip()
-        return default
-    
-    def clean_entry(val, missing="Not listed"):
-         if val is None: 
-              return missing
-         if isinstance(val, float) and isnan(val):
-              return missing
-         s = str(val).strip()
-         if s.lower() == "nan" or s == "":
-              return missing
-         return s
-            
-    def format_job(doc):
-            md = doc.metadata
-            sal = md.get("max_salary")
-            if isinstance(sal, float) and isnan(sal):
-                sal = "Not available"
-            pay = md.get("pay_period", "")
-            title       = extract_field(doc.page_content, "Title: ")
-            location    = extract_field(doc.page_content, "Location: ")
-            experience  = extract_field(doc.page_content, "Experience Level: ")
-            remote_ok   = extract_field(doc.page_content, "Remote Allowed: ")
-
-            return {
-                "company_name": md.get("company_name"),
-                "job_title":    title,
-                "location":     location,
-                "max_salary":   f"{sal} per {pay}".strip() or "Not available",
-                "experience":   clean_entry(experience, "Not specified"),
-                "remote_allowed": clean_entry(remote_ok, "Not specified"),
-                "url":          clean_entry(md.get("job_posting_url", "Not available")),
-                "industry":     clean_entry(md.get("industry", "Not specified")),
-            }
     formatted_jobs = [format_job(d) for d in relevant_jobs]
     jobs_payload = json.dumps(formatted_jobs, indent=2)
 
@@ -126,54 +88,8 @@ if uploaded_file is not None:
         "resume_text": resume_text,
         "jobs": jobs_payload
         }
-        result = chain.invoke(chain_input)
+        response = chain.invoke(chain_input)
 
-    st.subheader("Tailored Job Recommendations")
-    try: 
-            matches = json.loads(result)
-            for jobs in matches: 
-                st.markdown(f"""
-**Comanpy: {jobs['company_name']}**  
-*Job Title:{jobs['job_title']}*  
-📍 Location: {jobs['location']}  
-💰 Salary: {jobs['max_salary']}  
-📈 Work-level Experience: {jobs['experience']}  
-🌐 Remote: {jobs['remote_allowed']}  
-🔗 [Apply here]({jobs['url']})
-""")
-    except json.JSONDecodeError:
-        st.write(chain_input)
-        st.error("Sorry, I couldn’t decode the response into JSON.")
-
-
-
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    format_bot_response(response)
 
     
-    #jobs_text = format_docs(relevant_jobs)
-
-   # chain_input = {
-   #     "resume_text": resume_text,
-   #     "jobs": jobs_text
-   # }
-   # result = chain.invoke(chain_input)
-
-   # st.subheader("Tailored Job Recommendations")
-   # st.write(result)
-

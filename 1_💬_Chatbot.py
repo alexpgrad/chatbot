@@ -2,9 +2,8 @@ from langchain_ollama.llms import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
 from vector import retriever
 import streamlit as st
-from math import isnan
 import json
-
+from utils import format_job, format_bot_response
 
 st.set_page_config(page_title="AI Career Companion", page_icon="💼",)
 st.title("AI Career Companion")
@@ -14,7 +13,7 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
 input_text = st.chat_input(
-    "Enter your job search queuery: "
+    "Enter your job search queuery (i.e. Show me entry level accounting jobs in Colorado): "
 )
 
 if input_text:
@@ -59,44 +58,6 @@ if input_text:
         question = input_text
         jobs = retriever.invoke(question)
 
-        def extract_field(page_content: str, prefix: str, default="Not available") -> str:
-            for line in page_content.splitlines():
-                if line.startswith(prefix):
-                    return line[len(prefix):].strip()
-            return default
-        
-        def clean_entry(val, missing="Not listed"):
-         if val is None: 
-              return missing
-         if isinstance(val, float) and isnan(val):
-              return missing
-         s = str(val).strip()
-         if s.lower() == "nan" or s == "":
-              return missing
-         return s
-
-        def format_job(doc):
-            md = doc.metadata
-            sal = md.get("max_salary")
-            if isinstance(sal, float) and isnan(sal):
-                sal = "Not available"
-            pay = md.get("pay_period", "")
-            title       = extract_field(doc.page_content, "Title: ")
-            location    = extract_field(doc.page_content, "Location: ")
-            experience  = extract_field(doc.page_content, "Experience Level: ")
-            remote_ok   = extract_field(doc.page_content, "Remote Allowed: ")
-
-            return {
-                "company_name": md.get("company_name", "Not available"),
-                "job_title":    title,
-                "location":     location,
-                "max_salary":   f"{sal} per {pay}".strip() or "Not available",
-                "experience":   clean_entry(experience, "Not specified"),
-                "remote_allowed": clean_entry(remote_ok, "Not specified"),
-                "url":          clean_entry(md.get("job_posting_url", "Not available")),
-                "industry":     clean_entry(md.get("industry", "Not specified")),
-            }
-
         formatted_jobs = [format_job(d) for d in jobs]
         jobs_payload = json.dumps(formatted_jobs, indent=2)
         result = chain.invoke({"jobs": jobs_payload, "question": question})
@@ -106,23 +67,7 @@ for exchange in st.session_state.chat_history:
     with st.chat_message("user"):
         st.write(exchange["user"])
     with st.chat_message("assistant"):
-        bot_raw = (exchange["bot"])
-
-        try: 
-            matches = json.loads(bot_raw)
-            st.markdown("### Matches")
-            for jobs in matches: 
-                st.markdown(f"""
-**Company: {jobs['company_name']}**  
-*Job Title: {jobs['job_title']}*  
-📍 Location: {jobs['location']}  
-💰 Salary: {jobs['max_salary']}  
-📈 Work-level Experience: {jobs['experience']}  
-🌐 Remote: {jobs['remote_allowed']}  
-🔗 [Apply here]({jobs['url']})
-""")
-        except json.JSONDecodeError:
-            st.write(bot_raw)
-            st.error("Sorry, I couldn’t decode the response into JSON.")
+        response = (exchange["bot"])
+        format_bot_response(response)
 
 #job_id	company_name ,title, description, max_salary, pay_period, location, min_salary, formatted_work_type, remote_allowed, job_posting_url, skills_desc, industry, formatted_experience_level
