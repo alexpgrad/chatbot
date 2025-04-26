@@ -31,6 +31,6 @@ source venv/bin/activate
 4. Run the app: 
 
 ```
-sudo streamlit 1_💬_Chatbot.py 
+sudo streamlit run 1_💬_Chatbot.py 
 
 ```
