@@ -13,7 +13,7 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
 input_text = st.chat_input(
-    "Enter your job search queuery (i.e. Show me entry level accounting jobs in Colorado): "
+    "Enter your job search queuery: "
 )
 
 if input_text:

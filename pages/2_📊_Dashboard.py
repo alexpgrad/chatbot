@@ -15,11 +15,11 @@ st.sidebar.header("Filters")
 st.markdown(
     """
     Welcome to the AI Career Companion Dashboard! Our AI Career Companion dashboard streamlines your job search by offering 
-    filtering options such as salary and location. We enhanced this experience using AI-powered summaries of job descriptions. 
+    filtering options such as location, job title, and more. We enhanced this experience using AI-powered summaries of job descriptions. 
     """
 )
 
-location = df["location"].unique().tolist()
+location = sorted(df["location"].unique().tolist())
 selected_location = st.sidebar.selectbox("Select Location", ["All"] + location)  
 
 job_title = sorted(df["title"].unique().tolist())
@@ -28,7 +28,7 @@ selected_job_title = st.sidebar.selectbox("Select Job Title", ["All"] + job_titl
 industry = sorted(df["industry"].dropna().unique())
 selected_industry = st.sidebar.selectbox("Select Company Industry", ["All"] + industry)
 
-work_type = df["formatted_work_type"].unique().tolist()
+work_type = sorted(df["formatted_work_type"].unique().tolist())
 selected_work_type = st.sidebar.selectbox("Select Work Type", ["All"] + df["formatted_work_type"].unique().tolist())
 
 experience_level = df["formatted_experience_level"].unique().tolist()
@@ -83,7 +83,8 @@ if search:
         summary = get_summary(description)
         
         bot_response = json.dumps([{
-            "company_name": row["company_name"],
+            "company_name": row["company_name"]
+                            if pd.notna(row["company_name"]) else "Not listed",
             "job_title":    row["title"],
             "location":     row["location"],
             "max_salary":   f"{row['max_salary']:.2f} {row['pay_period'].lower()}" 
